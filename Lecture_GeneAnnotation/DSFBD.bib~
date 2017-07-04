@@ -1,0 +1,37 @@
+@Article{Gentleman2004,
+  Author =	 "Gentleman, R.C. and Carey, V.J. and Bates, D.M. and
+                  Bolstad, B. and Dettling, M. and Dudoit, S. and
+                  Ellis, B. and Gautier, L. and Ge, Y. and Gentry,
+                  J. and Hornik, K. and Hothorn, T. and Huber, W. and
+                  Iacus, S. and Irizarry, R. and Leisch, F. and Li,
+                  C. and Maechler, M. and Rossini, A.J. and Sawitzki,
+                  G. and Smith, C. and Smyth, G. and Tierney, L. and
+                  Yang, J.Y. and Zhang, J.",
+  Title =	 "{{B}ioconductor: open software development for
+                  computational biology and bioinformatics}",
+  Journal =	 "Genome Biol.",
+  Year =	 2004,
+  Volume =	 5,
+  Number =	 10,
+  Pages =	 "R80"
+}
+
+@Article{Lawrence2013,
+  Author =	 {Lawrence, M. and Huber, W. and Pages, H. and
+                  Aboyoun, P. and Carlson, M. and Gentleman, R. and
+                  Morgan, M.T. and Carey, V.J.},
+  Title =	 {{S}oftware for computing and annotating genomic
+                  ranges},
+  Journal =	 {PLoS Comput. Biol.},
+  Year =	 2013,
+  Volume =	 9,
+  Number =	 8
+}
+
+@Article{Guenther2014,
+   Author="Guenther, C.A. and Tasic, B. and Luo, L. and Bedell, M.A. and Kingsley, D.M.",
+   Title="{{A} molecular basis for classic blond hair color in {E}uropeans}",
+   Journal="Nat. Genet.",
+   Year="2014",
+   Month="Jun"
+}

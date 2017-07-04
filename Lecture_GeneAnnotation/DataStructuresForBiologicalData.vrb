@@ -1,0 +1,44 @@
+\frametitle{\Biocpkg{AnnotationHub} example: Obtain ROADMAP chromatin segmentation tracks[CONT]}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{gr} \hlkwb{<-} \hlstd{ah[[}\hlstr{'AH46982'}\hlstd{]]}
+\end{alltt}
+
+
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# loading from cache '/home/mvaniterson/.AnnotationHub/52422'}}\begin{alltt}
+\hlstd{gr}
+\end{alltt}
+\begin{verbatim}
+## GRanges object with 511350 ranges and 4 metadata columns:
+##            seqnames               ranges strand |        abbr
+##               <Rle>            <IRanges>  <Rle> | <character>
+##        [1]    chr10     [     1, 119600]      * |    15_Quies
+##        [2]    chr10     [119601, 120200]      * |      1_TssA
+##        [3]    chr10     [120201, 120400]      * |  2_TssAFlnk
+##        [4]    chr10     [120401, 122000]      * |      5_TxWk
+##        [5]    chr10     [122001, 122800]      * |      1_TssA
+##        ...      ...                  ...    ... .         ...
+##   [511346]     chrY [58984401, 58985800]      * |  8_ZNF/Rpts
+##   [511347]     chrY [58985801, 58999400]      * |       9_Het
+##   [511348]     chrY [58999401, 59001000]      * |    15_Quies
+##   [511349]     chrY [59001001, 59033200]      * |       9_Het
+##   [511350]     chrY [59033201, 59373400]      * |    15_Quies
+##                           name        color_name  color_code
+##                    <character>       <character> <character>
+##        [1]       Quiescent/Low             White     #FFFFFF
+##        [2]          Active TSS               Red     #FF0000
+##        [3] Flanking Active TSS        Orange Red     #FF4500
+##        [4]  Weak transcription         DarkGreen     #006400
+##        [5]          Active TSS               Red     #FF0000
+##        ...                 ...               ...         ...
+##   [511346] ZNF genes & repeats Medium Aquamarine     #66CDAA
+##   [511347]     Heterochromatin     PaleTurquoise     #8A91D0
+##   [511348]       Quiescent/Low             White     #FFFFFF
+##   [511349]     Heterochromatin     PaleTurquoise     #8A91D0
+##   [511350]       Quiescent/Low             White     #FFFFFF
+##   -------
+##   seqinfo: 93 sequences (1 circular) from hg19 genome
+\end{verbatim}
+\end{kframe}
+\end{knitrout}

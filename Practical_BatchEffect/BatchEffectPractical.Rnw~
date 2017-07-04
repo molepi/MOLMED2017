@@ -1,0 +1,300 @@
+% this is a simplified version of
+% https://github.com/yihui/knitr/blob/master/inst/examples/knitr-beamer.Rnw
+\documentclass{article}
+\usepackage[english]{babel} %%remove tildes e.q. in bibliography
+\usepackage{hyperref}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{bibentry}
+
+\bibliographystyle{apalike}
+\usepackage{chngcntr}
+\counterwithin*{footnote}{page}
+\newcommand\footcite[1]{\footnote{\bibentry{#1}}\label{\thepage:#1}}
+\newcommand\secondcite[1]{\textsuperscript{\ref{\thepage:#1}}}
+% \def\newblock{\hskip .11em plus .33em minus .07em}
+% \newcommand{\newblock}{}
+
+\newcommand{\software}[1]{\textsl{#1}}
+\newcommand\R{\software{R}}
+% 
+\newcommand\Bioconductor{\software{Bioconductor}}
+\newcommand{\Rpackage}[1]{\textsl{#1}}
+\newcommand\Biocpkg[1]{%
+  {\href{http://bioconductor.org/packages/release/bioc/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocannopkg[1]{%
+  {\href{http://bioconductor.org/packages/release/data/annotation/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocexptpkg[1]{%
+  {\href{http://bioconductor.org/packages/release/data/experiment/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\CRANpkg[1]{%
+  {\href{http://cran.fhcrc.org/web/packages/#1/index.html}%
+    {\Rpackage{#1}}}}
+% 
+\newcommand{\Rcode}[1]{\texttt{#1}}
+\newcommand{\Rfunction}[1]{\Rcode{#1}}
+\newcommand{\Robject}[1]{\Rcode{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+
+\begin{document}
+
+\title{Batch effects: Practical}
+\author{Maarten van Iterson}
+\date{\today}
+
+\maketitle
+
+<<setup, include=FALSE>>=
+opts_chunk$set(size = "small")
+@ 
+
+\section{Introduction}
+In this practical you will learn how to perform batch correction on RNAseq data using
+the packages \Biocpkg{RUVSeq} and \Biocpkg{sva}. The example data that will be used is 
+a subset of the HapMap RNAseq data described by Pickrell and Montgomery 
+\cite{Pickrell2010, Montgomery2010}. A combined dataset containing the RNAseq data of both papers
+is available from the ReCount website \cite{Frazee2011}. As phenotype information we have 
+Population (CEU/YRI) and Gender (Male/Female). In some of the Exercises we will assume the population 
+origin of the samples is a unknown batch effect.\\
+
+The practical consists of four parts:
+\begin{enumerate}
+\item download the data and some preprocessing
+\item find diff. expr. genes between Male/Female using \Biocpkg{limma}'s \Rfunction{voom} or \Biocpkg{edgeR}
+  with population as a known batch in the design matrix
+\item estimate batch effects using \Biocpkg{RUVseq} and find diff. expr. genes
+\item estimate batch effects using \Biocpkg{sva} and find diff. expr. genes  
+\end{enumerate}
+
+
+\section{Get the data:}
+Run the following two code chunks to get the data in your R-environment.\\
+
+<<downloaddata, cache=TRUE>>=
+suppressPackageStartupMessages(library(Biobase))
+monpick <- "http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData"
+load(url(monpick))
+head(pData(montpick.eset))
+counts <- exprs(montpick.eset)
+counts[1:5, 1:5]
+@ 
+
+Unfortunately, gender information is not provided. This can be obtained from the 1000genomes website:
+\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/20130606_sample_info.xlsx}
+Download the sample information file and save the sheet with sample info as csv-file and preprocess like this:\\
+
+<<downloadphenotypes, cache=TRUE>>=
+sample.info <- read.table("~/20130606_sample_info.csv", header=TRUE, sep="\t")
+head(sample.info)
+pdata <- merge(pData(montpick.eset), sample.info, by.x="sample.id", by.y="Sample", all.x=TRUE)
+pdata[is.na(pdata$Gender),]
+counts <- counts[,!is.na(pdata$Gender)]
+pdata <- pdata[!is.na(pdata$Gender),]
+pdata <- droplevels(pdata) 
+dim(pdata)
+dim(counts)
+@ 
+
+We had to remove two samples because for these no phenotype information was available. 
+Furthermore, we dropped the additional factor levels as these will interfere later with the creation of design-matrices.\\
+
+Now we can start our analyzes!\\
+
+\section{Finding diff. expr. genes using \Biocpkg{limma} or \Biocpkg{edgeR}}
+First we will find diff. expr. genes using either \Biocpkg{limma}'s \Rfunction{voom} or \Biocpkg{edgeR} which one is up to you!\\
+
+\subsection{Preprocessing and data inspection}
+
+\textbf{Exercise 1:}\\
+Construct a \Biocpkg{egdeR} \Robject{DGEList} with a group-variable the Gender information. Optionally, remove low expressed genes.\\
+
+\textbf{Solution 1:}\\
+<<dgelist, cache=TRUE>>=
+isexpr <- rowSums(counts) > 50
+counts <- counts[isexpr,]
+dim(counts)
+library(edgeR)
+d <- DGEList(counts, group=pdata$Gender)
+d <- calcNormFactors(d)
+@ 
+
+\textbf{Exercise 2:}\\
+Inspect the data using a Multi-dimensional scaling plot to see potential batches in the data. 
+Use coloring and labels to see which, gender or population, has the strongest effect.\\
+
+\textbf{Solution 2:}\\
+<<mdsgender, cache=TRUE>>=
+Gender <- substring(pdata$Gender,1,1)
+colGen <- ifelse(Gender=="m","blue","red")
+plotMDS(d, labels = Gender,top = 50, col=colGen, gene.selection="common", prior.count = 5)
+@
+
+<<mdspop, cache=TRUE>>=
+Population <- substring(pdata$population,1,1)
+colPop <- ifelse(Population=="C","blue","red")
+plotMDS(d, labels = Gender,top = 50, col=colPop, gene.selection="common", prior.count = 5)
+@ 
+
+\subsection{Fitting using \Rfunction{voom}}
+
+\textbf{Exercise 3a:}\\
+Fit a linear model correcting for the population structure using \Rfunction{voom}.\\
+
+\textbf{Solution 3a:}\\
+<<voom, cache=TRUE>>=
+design <- model.matrix(~Gender + Population, data = pdata)
+v <- voom(d, design, plot = TRUE) 
+@ 
+
+<<fitvoom, cache=TRUE>>=
+fit <- lmFit(v, design)
+fit <- eBayes(fit)
+@ 
+
+<<testvoom, cache=TRUE>>=
+summary(decideTests(fit))
+topTable(fit)
+@ 
+
+\textbf{Exercise 3b:}\\
+Fit a linear model correcting for the population structure using \Biocpkg{edgeR} (you can reuse the \Robject{DGEList}).
+
+\textbf{Solution 3b:}\\
+<<disp, cache=TRUE>>=
+d1 <- estimateGLMCommonDisp(d, design)
+d1 <- estimateGLMTagwiseDisp(d1, design)
+@ 
+
+<<fitedger, cache=TRUE>>=
+fit <- glmFit(d1, design)
+lrt <- glmLRT(fit, coef=2) 
+topTags(lrt)
+@ 
+
+\textbf{Optional Exercise:} 
+Annotate the top genes using \Biocannopkg{org.Hs.eg.db}. Are these the genes you would had expected?\\
+
+\section{Batch effect correction using \Biocpkg{RUVseq}}
+Now we will assume the population of the samples was unknown and investigate if we can correct for this
+using the method implemented in \Biocpkg{RUVseq}. Since, we do not have negative controls we will use a
+set of empirical controls. Empirical controls are just the genes that do not show diff. expr. for the phenotype of interest.\\
+
+\textbf{Exercise 4:}\\
+Find a set of empirical control genes.\\
+
+\textbf{Solution 4:}\\
+<<ruvempirical, cache=TRUE>>=
+top <- topTags(lrt, n=Inf)$table
+empirical <- rownames(d)[which(!(rownames(d) %in% rownames(top)[1:5000]))]
+@ 
+
+\textbf{Exercise 5:}\\
+Run \Rfunction{RUVg} and inspect the effect on the data using 
+the plotRLE and/or plotPCA from \Biocpkg{RUVseq}.\\
+
+\textbf{Solution 5:}\\
+<<forplotting, cache=TRUE>>=
+suppressPackageStartupMessages(library(RUVSeq))
+rownames(pdata) <- pdata$sample.id
+set <- newSeqExpressionSet(d$counts, phenoData = pdata$Gender)
+set
+@ 
+
+<<ruvest, cache=TRUE>>=
+corrected <- RUVg(set, empirical, k=1)
+@ 
+
+<<rleplot, eval=FALSE>>=
+op <- par(mfcol=c(2, 1))
+plotRLE(set, outline=FALSE, ylim=c(-2, 2), col=colPop, las=2)
+plotRLE(corrected, outline=FALSE, ylim=c(-2, 2), col=colGen, las=2)
+par(op)
+@ 
+
+<<PCAplot, eval=FALSE>>=
+op <- par(mfcol=c(2, 1))
+plotPCA(set, col=colPop, cex=1.2)
+plotPCA(corrected, col=colGen, cex=1.2)
+par(op)
+@ 
+
+\textbf{Exercise 6:}\\
+Can you think of a way to see what the estimated unwanted variation represents? What does it represent?\\
+
+\textbf{Solution 6:}\\
+<<ruvplot>>=
+ruv1 <- corrected$W_1
+plot(ruv1, pdata$Population)
+@ 
+
+\textbf{Exercise 7:}\\
+Fit a linear model correcting for the factor of unwanted variation. 
+You can reuse the \Robject{DGEList} and again it is up to you to use \Rfunction{voom} or \Biocpkg{edgeR}.\\
+
+\textbf{Solution 7:}\\
+<<ruvfit, cache=TRUE>>=
+designruv <- model.matrix(~Gender, data = pdata) 
+designruv <- cbind(designruv, ruv1)
+d2 <- estimateGLMCommonDisp(d, designruv)
+d2 <- estimateGLMTagwiseDisp(d2, designruv)
+fit <- glmFit(d2, designruv)
+lrt <- glmLRT(fit, coef=2)
+topTags(lrt)
+@ 
+
+\section{Batch effect correction using \Biocpkg{sva}}
+Now we will use the \Biocpkg{sva}-package to estimate the unwanted variation introduced by the different
+populations.\\
+
+\textbf{Exercise 8:}\\
+What are the optimal number of surrogate variables to we should correct for?\\
+
+\textbf{Solution 8:}\\
+<<sva, cache=TRUE>>=
+suppressPackageStartupMessages(library(sva))
+designsva <- model.matrix(~Gender, data = pdata) 
+n.sv <- num.sv(d$counts, designsva, method="leek")
+n.sv
+@ 
+
+If find this number too high and we can not even correct for all these; you will get
+a error-message if you try. I suppose we use just one!\\
+
+\textbf{Exercise 9:}\\
+To estimate the surrogate variable we need to define our null hypothesis. What is our null hypothesis? Run \Rfunction{svaseq}.\\
+
+\textbf{Solution 9:}\\
+<<svaseq, cache=TRUE>>=
+designsva0 <- model.matrix(~1, data = pdata) 
+svseq <- svaseq(d$counts, designsva, designsva0, n.sv=1)
+@ 
+
+\textbf{Exercise 10:}\\
+Can you think of a way to see what the estimated unwanted variation represents? What does it represent?\\
+
+\textbf{Solution 10:}\\
+<<svaplot, eval=FALSE>>=
+plot(svseq$sv, pdata$Population) 
+@ 
+
+\textbf{Exercise 11:}\\
+Fit a linear model correcting for the surrogate variable. 
+You can reuse the \Robject{DGEList} and again it is up to you to use \Rfunction{voom} or \Biocpkg{edgeR}.\\
+
+\textbf{Solution 11:}\\
+<<svafit, cache=TRUE>>=
+designsva <- cbind(designsva, svseq$sv)
+v <- voom(d, designsva, plot = TRUE)
+fit <- lmFit(v, designsva)
+fit <- eBayes(fit)
+summary(decideTests(fit))
+topTable(fit)
+@
+
+\section{Bibliography}
+\bibliography{../BatchEffect/batch}
+
+\end{document}

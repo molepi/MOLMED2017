@@ -1,0 +1,330 @@
+% this is a simplified version of
+% https://github.com/yihui/knitr/blob/master/inst/examples/knitr-beamer.Rnw
+\documentclass{beamer}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{bibentry}
+\usepackage[english]{babel} %%remove tildes e.q. in bibliography
+
+\bibliographystyle{apalike}
+\usepackage{chngcntr}
+\counterwithin*{footnote}{page}
+\newcommand\footcite[1]{\footnote{\bibentry{#1}}\label{\thepage:#1}}
+\newcommand\secondcite[1]{\textsuperscript{\ref{\thepage:#1}}}
+% \def\newblock{\hskip .11em plus .33em minus .07em}
+%\newcommand{\newblock}{}
+
+\newcommand{\software}[1]{\textsl{#1}}
+\newcommand\R{\software{R}}
+% 
+\newcommand\Bioconductor{\software{Bioconductor}}
+\newcommand{\Rpackage}[1]{{\usebeamercolor[fg]{structure} \textsl{#1}}}
+\newcommand\Biocpkg[1]{%
+  {\href{http://bioconductor.org/packages/release/bioc/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocannopkg[1]{%
+  {\href{http://bioconductor.org/packages/release/data/annotation/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocexptpkg[1]{%
+  {\href{http://bioconductor.org/packages/release/data/experiment/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\CRANpkg[1]{%
+  {\href{http://cran.fhcrc.org/web/packages/#1/index.html}%
+    {\Rpackage{#1}}}}
+% 
+\newcommand{\Rcode}[1]{\texttt{#1}}
+\newcommand{\Rfunction}[1]{\Rcode{#1}}
+\newcommand{\Robject}[1]{\Rcode{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+
+\begin{document}
+
+\nobibliography{DSFBD}
+
+<<setup, include=FALSE>>=
+opts_chunk$set(size = "tiny")
+@
+
+\title{Data Structures for Biological Data in \R{}}
+\author{Maarten van Iterson}
+\date{\today}
+
+\maketitle
+
+% very important to use option [fragile] for frames containing code output!
+
+% \begin{frame}
+%   \frametitle{Table of Contents}
+%   \tableofcontents
+% \end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+  \frametitle{Goals}
+  \begin{itemize}
+  \item Which annotation packages are available within \Bioconductor{}\footcite{Gentleman2004}$^,$\footcite{Huber2015}
+  \item How can we use these packages
+  \item Get some idea of how these packages are implemented
+  \item How to get annotation from online resources in \R{}
+  \item Use \Bioconductor{} data/infra structure(s) for efficient handling of Biological data in \R{}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Major types of annotation in \Bioconductor{}}
+  Meta data/Annotation \Biocpkg{AnnotationDbi}\\
+  \begin{itemize}
+  \item Organism level: \Biocannopkg{org.Mm.eg.db}
+  \item Platform level: \Biocannopkg{hgu133plus2.db}
+  \item System-biology level: \Biocannopkg{GO.db} or \Biocannopkg{KEGG.db}
+  \item Transcript centric annotations: \Biocpkg{GenomicFeatures}
+  \end{itemize}
+  \vfill
+  Range data \Biocpkg{IRanges}, \Biocpkg{GenomicRanges} and \Biocpkg{GenomicFeatures}\\
+  \begin{itemize}
+  \item Genomic ranges: \Biocannopkg{TxDb.Hsapiens.UCSC.hg19.knownGene}
+  \end{itemize}
+  For example: annotation tracks from genome browsers or ChIP-seq data, a peak covering a certain region of the genome
+\end{frame}
+
+\begin{frame}
+  \frametitle{Major types of annotation in \Bioconductor{}[CONT]}
+  Sequence data: \Biocpkg{Biostrings} and \Biocpkg{BSgenome}
+  \begin{itemize}
+  \item Genomic sequences: \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19}
+  \end{itemize}
+  For example: DNA/RNA sequences or motifs of transcription factor binding sites
+  \vfill
+  Query web-based resources for annotation and experimental data, e.g., ENCODE, ROADMAP, $\cdots$, tracks\\
+  \begin{itemize}
+  \item \Biocpkg{biomaRt} or \Biocpkg{AnnotationHub}
+  \end{itemize}
+  \vfill
+  import of genomic data in various formats like BED, BAM, FASTQ, VCF, $\cdots$
+  \begin{itemize}
+  \item \Biocpkg{rtracklayer}, \Biocpkg{Rsamtools}, \Biocpkg{VariantAnnotation}
+  \end{itemize}
+\end{frame}
+
+\section{Meta data/Annotation}
+
+\begin{frame}
+  \frametitle{Meta data/Annotation}
+  \Bioconductor{} provides extensive annotation resource
+  \begin{itemize}
+  \item for associating microarray and other genomic data in real time with biological metadata from web databases such as GenBank, Entrez genes and PubMed
+  \item covering a broad range of model organisms with support for different genomic builds
+  \item updated every 6 months corresponding to the \Bioconductor{} release cycle
+  \item customized annotation libraries can also be assembled
+  \item implementations are based on \textbf{SQLite} with a number of higher-level interfaces e.g., using a simplified version of SQL queries
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: Mapping between gene identifiers}
+  <<metadata, cache=TRUE>>=
+  library(org.Hs.eg.db)
+  entrez_ids <- head(keys(org.Hs.eg.db, keytype="ENTREZID"))
+  entrez_ids
+  select(org.Hs.eg.db, keys=entrez_ids, columns=c("SYMBOL","ENSEMBL"), keytype="ENTREZID")
+  @
+\end{frame}
+
+\begin{frame}
+  \frametitle{Implementation}
+  \begin{itemize}
+  \item gene centric databases (ENTREZ GENE ID)
+  \item out-of-memory data storage (SQLite )
+  \item fast access to data subsets (lower-level interface using SQL)
+  \item general and simple high-level interface \Rfunction{columns}, \Rfunction{keys}, \Rfunction{keytype} and \Rfunction{select}
+  \end{itemize}
+  \vfill
+  Further reading: \Biocpkg{AnnotationDbi} vignettes:
+  \begin{itemize}
+  \item[]``AnnotationDbi: Introduction To Bioconductor Annotation Packages'' and
+  \item[] ``How to use bimaps from the ".db" annotation packages''
+  \end{itemize}
+\end{frame}
+
+\section{Range data}
+
+\begin{frame}
+  \frametitle{Range data\footcite{Lawrence2013}}
+  Core packages \Biocpkg{IRanges}, \Biocpkg{GenomicRanges} and \Biocpkg{GenomicFeatures}
+  \begin{itemize}
+  \item directly supports more than 80 other \Bioconductor{} packages, including those for sequence analysis, differential expression analysis and visualization
+  \item provide scalable data structures for representing annotated ranges on the genome, with special support for transcript structures, read alignments and coverage vectors.
+  \item computational facilities include efficient algorithms for overlap and nearest neighbor detection, coverage calculation and
+    other range operations.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: \Robject{Rle}, \Robject{IRanges} and
+    \Robject{GRanges}}
+  <<rangedataintro, cache=TRUE, tidy=TRUE>>=
+  (seqnames <- Rle(rep(c("chr1", "chr2"), c(1, 3))))
+  (ranges <- IRanges(1:4, end = 11:14, names = head(letters, 4)))
+  GRanges(seqnames = seqnames, ranges = ranges,
+  strand = Rle(strand(c("-", "+")), c(1, 3)),
+  GC = seq(1, 0, length=4))
+  @
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: Obtain transcript structure}
+  <<rangedata, cache=TRUE>>=
+  library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+  library(org.Hs.eg.db)
+  kras_gene <- org.Hs.egSYMBOL2EG$KRAS
+  kras_gene
+  kras_exons <- exons(TxDb.Hsapiens.UCSC.hg19.knownGene,
+  filter = list(gene_id = kras_gene),
+  columns = c("tx_id", "exon_id"))
+  kras_exons
+  @
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example: Obtain transcript structure}
+  \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{kras}
+    \caption{Representation of the exons for the human KRAS gene, derived from the UCSC known gene annotation.}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Implementation}
+  \Biocpkg{IRanges/GenomicRanges}
+  \begin{itemize}
+  \item Run-length-encoding for efficient storage of range data
+  \item IRange object are derived from IntegerList a list of integer vectors
+  \end{itemize}
+  One of the most power features are finding overlapping regions between \Robject{IRanges} or \Robject{GRanges}
+  \begin{itemize}
+  \item \Rfunction{findOverlaps} function uses an efficient interval tree algorithm
+  \item the algorithm supports several types of overlap, including those defined by Allen's Interval Algebra
+  \item the one-time cost of constructing the interval tree is $O(n\log n)$, and queries are performed in logarithmic time
+  \end{itemize}
+\end{frame}
+
+\section{Sequence data}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence data}
+  \Biocpkg{Biostrings} DNA, RNA and protein string manipulations
+  \begin{itemize}
+  \item counting and tabulating i.e., nucleotide frequencies
+  \item sequence transformation and editing, i.e., translate DNA in RNA
+  \item string matching/alignments, i.e., pattern matching
+  \item I/O  functions, i.e. read/write FASTA files
+  \end{itemize}
+  \Biocpkg{BSgenome}
+  \begin{itemize}
+  \item 22 genomes with different builds e.g., H. sapiens has available builds:\\
+    <<echo=FALSE>>=
+    library(BSgenome)
+    genomes <- available.genomes()
+    organism <- sapply(genomes, function(x) unlist(strsplit(x, "\\."))[2])
+    ##length(table(organism))
+    genomes[grepl("Hsapiens", genomes)]
+    @
+  \item optionally \Biocpkg{BSgenome} package can be generated
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: Obtain nucleotide frequency of Human chr 1/count number of MseI restriction sites}
+  <<sequencedata, cache=TRUE>>=
+  library(BSgenome.Hsapiens.UCSC.hg19)
+  Hsapiens$chr1
+  alphabetFrequency(Hsapiens$chr1)
+  MseI <- "TTAA"
+  countPattern(MseI, Hsapiens$chr1)
+  @
+\end{frame}
+
+\begin{frame}
+  \frametitle{Implementation}
+  \begin{enumerate}
+  \item use R external pointers to store the string data (references to C structures)
+  \item use bit patterns to encode the string data
+  \end{enumerate}
+\end{frame}
+
+\section{Online resources}
+\begin{frame}
+  \frametitle{Online resources}
+  \begin{itemize}
+  \item genome browsers like UCSC and Ensembl are a rich resource for annotation of biological data
+  \item large Consortia make their data available through genome browser e.g., HapMap, ENCODE, ROADMAP, $\cdots$
+  \end{itemize}
+  \vfill
+  \Biocpkg{biomaRt}, \Biocpkg{rtracklayer} and \Biocpkg{AnnotationHub}
+  \begin{itemize}
+  \item these packages provide easy access to public data repositories
+  \item \Biocpkg{rtracklayer} has functionality to import various genomic data formats: GFF, BED, Bed15, bedGraph, WIG, BigWig
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\Biocpkg{biomaRt} example: Get annotation from ENSEMBL}
+  <<onlineresources1, cache=TRUE>>=
+  library(biomaRt)
+  ensembl <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
+  getBM(attributes = c("hgnc_symbol", "ensembl_gene_id") ,
+  filters = "entrezgene",
+  values = entrez_ids, mart= ensembl)
+  @
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\Biocpkg{rtracklayer} example: Genome Segmentations track from ENCODE}
+  <<onlineresources2, cache=TRUE>>=
+  library(rtracklayer)
+  genomicSegmentation <- import("wgEncodeAwgSegmentationChromhmmGm12878.bed", format="BED")
+  head(genomicSegmentation)
+  @
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\Biocpkg{AnnotationHub} example: Obtain ROADMAP chromatin segmentation tracks}
+  <<onlineresource3, cache=TRUE>>=
+  library(AnnotationHub)
+  ah <- AnnotationHub() 
+  query(ah, c("EpigenomeRoadMap", "coreMarks"))   
+  @
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\Biocpkg{AnnotationHub} example: Obtain ROADMAP chromatin segmentation tracks[CONT]}
+  <<onlineresource4, cache=TRUE>>=  
+  ah['AH46982']   
+  @
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\Biocpkg{AnnotationHub} example: Obtain ROADMAP chromatin segmentation tracks[CONT]}
+  <<onlineresource5, cache=TRUE>>=
+  gr <- ah[['AH46982']]
+  gr  
+  @
+\end{frame}
+
+\begin{frame}
+  \frametitle{Further Reading}
+  \begin{itemize}
+  \item  all vignettes: \textit{$>$ vignette("packageName")}
+    \vfill
+  \item \url{http://www.bioconductor.org/help/workflows/annotation/annotation/}
+  \item \url{http://www.bioconductor.org/help/workflows/variants/}
+  \item \url{http://www.bioconductor.org/help/workflows/annotation/AnnotatingRanges/}
+    \vfill
+  \item \url{http://www.ebi.ac.uk/training/sites/ebi.ac.uk.training/files/materials/2013/131021_HTS/genesandgenomes.pdf}
+  \end{itemize}
+\end{frame}
+
+\end{document}

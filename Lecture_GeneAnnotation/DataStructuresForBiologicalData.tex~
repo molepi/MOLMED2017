@@ -1,0 +1,606 @@
+% this is a simplified version of
+% https://github.com/yihui/knitr/blob/master/inst/examples/knitr-beamer.Rnw
+\documentclass{beamer}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{bibentry}
+
+\bibliographystyle{apalike}
+\usepackage{chngcntr}
+\counterwithin*{footnote}{page}
+\newcommand\footcite[1]{\footnote{\bibentry{#1}}\label{\thepage:#1}}
+\newcommand\secondcite[1]{\textsuperscript{\ref{\thepage:#1}}}
+                                                % \def\newblock{\hskip .11em plus .33em minus .07em}
+                                              \newcommand{\newblock}{}
+
+                                              \newcommand{\software}[1]{\textsl{#1}}
+                                                \newcommand\R{\software{R}}
+                                                %
+                                                \newcommand\Bioconductor{\software{Bioconductor}}
+                                                \newcommand{\Rpackage}[1]{{\usebeamercolor[fg]{structure} \textsl{#1}}}
+                                                  \newcommand\Biocpkg[1]{%
+{\href{http://bioconductor.org/packages/release/bioc/html/#1.html}%
+{\Rpackage{#1}}}}
+\newcommand\Biocannopkg[1]{%
+{\href{http://bioconductor.org/packages/release/data/annotation/html/#1.html}%
+{\Rpackage{#1}}}}
+\newcommand\Biocexptpkg[1]{%
+{\href{http://bioconductor.org/packages/release/data/experiment/html/#1.html}%
+{\Rpackage{#1}}}}
+\newcommand\CRANpkg[1]{%
+{\href{http://cran.fhcrc.org/web/packages/#1/index.html}%
+{\Rpackage{#1}}}}
+%
+\newcommand{\Rcode}[1]{\texttt{#1}}
+\newcommand{\Rfunction}[1]{\Rcode{#1}}
+\newcommand{\Robject}[1]{\Rcode{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+\nobibliography{DSFBD}
+
+
+
+\title{Data Structures for Biological Data in \R{}}
+\author{Maarten van Iterson}
+\date{\today}
+
+\maketitle
+
+% very important to use option [fragile] for frames containing code output!
+
+% \begin{frame}
+%   \frametitle{Table of Contents}
+%   \tableofcontents
+% \end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+\frametitle{Goals}
+\begin{itemize}
+\item Which annotation packages are available within \Bioconductor{}
+\item How can we use these packages
+\item Get some idea of how these packages are implemented
+\item How to get annotation from online resources in \R{}
+\item Use \Bioconductor{} data structures/infrastucture for efficient handling of Biological data in \R{}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{\Bioconductor{}\footcite{Gentleman2004}}
+\url{http://www.bioconductor.org}
+\begin{itemize}
+\item \Bioconductor{} is an open source, open development software project to provide tools for the analysis and comprehension of high-throughput genomic data.
+\item The \Bioconductor{} project started in 2001 and is overseen by a core team, based primarily at the Fred Hutchinson Cancer Research Center.
+\item $>670$ packages (2013) for the analysis of data ranging from expression microarrays through next-generation sequencing.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Installing \Bioconductor{}-packages}
+\begin{itemize}
+\item current release of \Bioconductor{} is version 2.14; it works with \R{} version 3.1.0.
+\item new releases every half year, especially important for packages containing annotation)
+\item most packages are depedent on other packages, the \Bioconductor{} build-system ensuires everthing works fine
+\item installation is fairly easy
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{source}\hlstd{(}\hlstr{"http://bioconductor.org/biocLite.R"}\hlstd{)}
+\hlkwd{biocLite}\hlstd{(}\hlstr{"somepackage"}\hlstd{)}
+\hlkwd{biocLite}\hlstd{(}\hlkwd{c}\hlstd{(}\hlstr{"somepackage"}\hlstd{,} \hlstr{"anotherpackage"}\hlstd{))}
+\hlkwd{library}\hlstd{(BiocInstaller)}
+\hlkwd{biocLite}\hlstd{(}\hlstr{"somepackage"}\hlstd{)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+\item depedencies will be install automatically
+\item some annotation packages are quite large e.g., \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} $\approx 1Gb$
+\end{itemize}
+see \url{http://www.bioconductor.org/install/}
+\end{frame}
+
+\begin{frame}
+\frametitle{fragile}
+\frametitle{Packages required for the Pratical}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{biocLite}\hlstd{(}\hlkwd{c}\hlstd{(}\hlstr{"BiocGenerics"}\hlstd{,} \hlstr{"GenomeInfoDb"}\hlstd{,} \hlstr{"XVector"}\hlstd{,} \hlstr{"GenomicRanges"}\hlstd{,} \hlstr{"MotifDb"}\hlstd{,} \hlstr{"org.Hs.eg.db"}\hlstd{,} \hlstr{"BSgenome.Hsapiens.UCSC.hg19"}\hlstd{,} \hlstr{"rtracklayer"}\hlstd{,} \hlstr{"seqLogo"}\hlstd{,} \hlstr{"Biostrings"}\hlstd{,} \hlstr{"biomaRt"}\hlstd{,} \hlstr{"IRanges"}\hlstd{,} \hlstr{"Gviz"}\hlstd{))}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}
+\frametitle{Major types of annotation in \Bioconductor{}}
+Meta data/Annotation \Biocpkg{AnnotationDbi}\\
+\begin{itemize}
+\item Organism level: \Biocannopkg{org.Mm.eg.db}
+\item Platform level: \Biocannopkg{hgu133plus2.db}
+\item System-biology level: \Biocannopkg{GO.db} or \Biocannopkg{KEGG.db}
+\item Transcript centric annotations: \Biocpkg{GenomicFeatures}
+\end{itemize}
+\vfill
+Range data \Biocpkg{IRanges}, \Biocpkg{GenomicRanges} and \Biocpkg{GenomicFeatures}\\
+\begin{itemize}
+\item Genomic ranges: \Biocannopkg{TxDb.Hsapiens.UCSC.hg19.knownGene}
+\end{itemize}
+For example: annotation tracks from genome browsers or ChIP-seq data, a peak covering a certain region of the genome
+\end{frame}
+
+\begin{frame}
+\frametitle{Major types of annotation in \Bioconductor{}[CONT]}
+Sequence data: \Biocpkg{Biostrings} and \Biocpkg{BSgenome}
+\begin{itemize}
+\item Genomic sequences: \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19}
+\end{itemize}
+For example: DNA/RNA sequences or motifs of transcription factor binding sites
+\vfill
+Query web-based resources for annotation and exprimental data, e.g., ENCODE tracks\\
+\begin{itemize}
+\item \Biocpkg{biomaRt} or \Biocpkg{AnnotationHub}
+\end{itemize}
+\vfill
+import of genomic data in various formats like BED, BAM, FASTQ, VCF, $\cdots$
+\begin{itemize}
+\item \Biocpkg{rtracklayer}, \Biocpkg{Rsamtools}, \Biocpkg{VariantAnnotation}
+\end{itemize}
+\end{frame}
+
+\section{Meta data/Annotation}
+
+\begin{frame}
+\frametitle{Meta data/Annotation}
+\Bioconductor{} provides extensive annotation resource
+\begin{itemize}
+\item for associating microarray and other genomic data in real time with biological metadata from web databases such as GenBank, Entrez genes and PubMed
+\item covering a broad range of model organisms with support for different genomic builds
+\item updated every 6 months corresponding to the \Bioconductor{} release cycle
+\item customized annotation libraries can also be assembled
+\item implementations are based on \textbf{SQLite} with a number of higher-level interfaces e.g., using a simplified version of SQL queries
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Mapping between gene identifiers}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(org.Hs.eg.db)}
+\hlstd{entrez_ids} \hlkwb{<-} \hlkwd{head}\hlstd{(}\hlkwd{keys}\hlstd{(org.Hs.eg.db,} \hlkwc{keytype}\hlstd{=}\hlstr{"ENTREZID"}\hlstd{))}
+\hlstd{entrez_ids}
+\end{alltt}
+\begin{verbatim}
+## [1] "1"         "10"        "100"       "1000"      "10000"     "100008586"
+\end{verbatim}
+\begin{alltt}
+\hlkwd{select}\hlstd{(org.Hs.eg.db,} \hlkwc{keys}\hlstd{=entrez_ids,} \hlkwc{columns}\hlstd{=}\hlkwd{c}\hlstd{(}\hlstr{"SYMBOL"}\hlstd{,}\hlstr{"ENSEMBL"}\hlstd{),} \hlkwc{keytype}\hlstd{=}\hlstr{"ENTREZID"}\hlstd{)}
+\end{alltt}
+
+
+{\ttfamily\noindent\color{warningcolor}{\#\# Warning: 'select' resulted in 1:many mapping between keys and return rows}}\begin{verbatim}
+##     ENTREZID  SYMBOL         ENSEMBL
+## 1          1    A1BG ENSG00000121410
+## 2         10    NAT2 ENSG00000156006
+## 3        100     ADA ENSG00000196839
+## 4       1000    CDH2 ENSG00000170558
+## 5      10000    AKT3 ENSG00000117020
+## 6  100008586 GAGE12F ENSG00000236362
+## 7  100008586 GAGE12F ENSG00000224659
+## 8  100008586 GAGE12F ENSG00000241465
+## 9  100008586 GAGE12F ENSG00000215269
+## 10 100008586 GAGE12F ENSG00000269149
+## 11 100008586 GAGE12F ENSG00000270928
+## 12 100008586 GAGE12F ENSG00000271467
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}
+\frametitle{Implementation}
+\begin{itemize}
+\item gene centric databases (ENTREZ GENE ID)
+\item out-of-memory data storage (SQLite )
+\item fast access to data subsets (lower-level interface using SQL)
+\item general and simple high-level interface \Rfunction{columns}, \Rfunction{keys}, \Rfunction{keytype} and \Rfunction{select}
+\end{itemize}
+\vfill
+Further reading: \Biocpkg{AnnotationDbi} vignettes:
+\begin{itemize}
+\item[]``AnnotationDbi: Introduction To Bioconductor Annotation Packages'' and
+\item[] ``How to use bimaps from the ".db" annotation packages''
+\end{itemize}
+\end{frame}
+
+\section{Range data}
+
+\begin{frame}
+\frametitle{Range data\footcite{Lawrence2013}}
+Core packages \Biocpkg{IRanges}, \Biocpkg{GenomicRanges} and \Biocpkg{GenomicFeatures}
+\begin{itemize}
+\item directly supports more than 80 other \Bioconductor{} packages, including those for sequence analysis, differential expression analysis and visualization
+\item provide scalable data structures for representing annotated ranges on the genome, with special support for transcript structures, read alignments and coverage vectors.
+\item computational facilities include efficient algorithms for overlap and nearest neighbor detection, coverage calculation and
+other range operations.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: \Robject{Rle}, \Robject{IRanges} and
+\Robject{GRanges}}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{(seqnames} \hlkwb{<-} \hlkwd{Rle}\hlstd{(}\hlkwd{rep}\hlstd{(}\hlkwd{c}\hlstd{(}\hlstr{"chr1"}\hlstd{,} \hlstr{"chr2"}\hlstd{),} \hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,} \hlnum{3}\hlstd{))))}
+\end{alltt}
+\begin{verbatim}
+## character-Rle of length 4 with 2 runs
+##   Lengths:      1      3
+##   Values : "chr1" "chr2"
+\end{verbatim}
+\begin{alltt}
+\hlstd{(ranges} \hlkwb{<-} \hlkwd{IRanges}\hlstd{(}\hlnum{1}\hlopt{:}\hlnum{4}\hlstd{,} \hlkwc{end} \hlstd{=} \hlnum{11}\hlopt{:}\hlnum{14}\hlstd{,} \hlkwc{names} \hlstd{=} \hlkwd{head}\hlstd{(letters,} \hlnum{4}\hlstd{)))}
+\end{alltt}
+\begin{verbatim}
+## IRanges of length 4
+##     start end width names
+## [1]     1  11    11     a
+## [2]     2  12    11     b
+## [3]     3  13    11     c
+## [4]     4  14    11     d
+\end{verbatim}
+\begin{alltt}
+\hlkwd{GRanges}\hlstd{(}\hlkwc{seqnames} \hlstd{= seqnames,} \hlkwc{ranges} \hlstd{= ranges,} \hlkwc{strand} \hlstd{=} \hlkwd{Rle}\hlstd{(}\hlkwd{strand}\hlstd{(}\hlkwd{c}\hlstd{(}\hlstr{"-"}\hlstd{,} \hlstr{"+"}\hlstd{)),}
+    \hlkwd{c}\hlstd{(}\hlnum{1}\hlstd{,} \hlnum{3}\hlstd{)),} \hlkwc{GC} \hlstd{=} \hlkwd{seq}\hlstd{(}\hlnum{1}\hlstd{,} \hlnum{0}\hlstd{,} \hlkwc{length} \hlstd{=} \hlnum{4}\hlstd{))}
+\end{alltt}
+\begin{verbatim}
+## GRanges with 4 ranges and 1 metadata column:
+##     seqnames    ranges strand |                GC
+##        <Rle> <IRanges>  <Rle> |         <numeric>
+##   a     chr1   [1, 11]      - |                 1
+##   b     chr2   [2, 12]      + | 0.666666666666667
+##   c     chr2   [3, 13]      + | 0.333333333333333
+##   d     chr2   [4, 14]      + |                 0
+##   ---
+##   seqlengths:
+##    chr1 chr2
+##      NA   NA
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Obtain transcript structure}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(TxDb.Hsapiens.UCSC.hg19.knownGene)}
+\hlkwd{library}\hlstd{(org.Hs.eg.db)}
+\hlstd{kras_gene} \hlkwb{<-} \hlstd{org.Hs.egSYMBOL2EG}\hlopt{$}\hlstd{KRAS}
+\hlstd{kras_gene}
+\end{alltt}
+\begin{verbatim}
+## [1] "3845"
+\end{verbatim}
+\begin{alltt}
+\hlstd{kras_exons} \hlkwb{<-} \hlkwd{exons}\hlstd{(TxDb.Hsapiens.UCSC.hg19.knownGene,}
+\hlkwc{vals} \hlstd{=} \hlkwd{list}\hlstd{(}\hlkwc{gene_id} \hlstd{= kras_gene),}
+\hlkwc{columns} \hlstd{=} \hlkwd{c}\hlstd{(}\hlstr{"tx_id"}\hlstd{,} \hlstr{"exon_id"}\hlstd{))}
+\hlstd{kras_exons}
+\end{alltt}
+\begin{verbatim}
+## GRanges with 8 ranges and 2 metadata columns:
+##       seqnames               ranges strand |             tx_id   exon_id
+##          <Rle>            <IRanges>  <Rle> |     <IntegerList> <integer>
+##   [1]    chr12 [25358180, 25362845]      - |       47893,47894    168446
+##   [2]    chr12 [25368371, 25368494]      - |             47893    168447
+##   [3]    chr12 [25378548, 25378707]      - |       47893,47894    168448
+##   [4]    chr12 [25380168, 25380346]      - |       47893,47894    168449
+##   [5]    chr12 [25386768, 25388160]      - |             47895    168450
+##   [6]    chr12 [25398208, 25398329]      - | 47893,47894,47895    168451
+##   [7]    chr12 [25403685, 25403854]      - |       47893,47894    168452
+##   [8]    chr12 [25403698, 25403863]      - |             47895    168453
+##   ---
+##   seqlengths:
+##                    chr1                 chr2 ...       chrUn_gl000249
+##               249250621            243199373 ...                38502
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}
+\frametitle{Example: Obtain transcript structure}
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{kras}
+\caption{Representation of the exons for the human KRAS gene, derived from the UCSC known gene annotation.}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Implementation}
+\Biocpkg{IRanges/GenomicRanges}
+\begin{itemize}
+\item Run-length-encoding for efficient storage of range data
+\item IRange object are derived from IntegerList a list of integer vectors
+\end{itemize}
+One of the most power features are finding overlapping regions between \Robject{IRanges} or \Robject{GRanges}
+\begin{itemize}
+\item \Rfunction{findOverlaps} function uses an efficient interval tree algorithm
+\item the algorithm supports several types of overlap, including those defined by Allen's Interval Algebra
+\item the one-time cost of constructing the interval tree is $O(n\log n)$, and queries are performed in logarithmic time
+\end{itemize}
+\end{frame}
+
+\section{Sequence data}
+
+\begin{frame}[fragile]
+\frametitle{Sequence data}
+\Biocpkg{Biostrings} DNA, RNA and protein string manipulations
+\begin{itemize}
+\item counting and tabulating i.e., nucleotide frequencies
+\item sequence transformation and editing, i.e., translate DNA in RNA
+\item string matching/alignments, i.e., pattern matching
+\item I/O  functions, i.e. read/write FASTA files
+\end{itemize}
+\Biocpkg{BSgenome}
+\begin{itemize}
+\item 22 genomes with different builds e.g., H. sapiens has available builds:\\
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## [1] "BSgenome.Hsapiens.NCBI.GRCh38"     
+## [2] "BSgenome.Hsapiens.UCSC.hg17"       
+## [3] "BSgenome.Hsapiens.UCSC.hg17.masked"
+## [4] "BSgenome.Hsapiens.UCSC.hg18"       
+## [5] "BSgenome.Hsapiens.UCSC.hg18.masked"
+## [6] "BSgenome.Hsapiens.UCSC.hg19"       
+## [7] "BSgenome.Hsapiens.UCSC.hg19.masked"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\item optionally \Biocpkg{BSgenome} package can be generated
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Obtain nucleotide frequency of Human chr 1/count number of MseI restriction sites}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(BSgenome.Hsapiens.UCSC.hg19)}
+\hlstd{Hsapiens}\hlopt{$}\hlstd{chr1}
+\end{alltt}
+\begin{verbatim}
+##   249250621-letter "DNAString" instance
+## seq: NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN...NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+\end{verbatim}
+\begin{alltt}
+\hlkwd{alphabetFrequency}\hlstd{(Hsapiens}\hlopt{$}\hlstd{chr1)}
+\end{alltt}
+\begin{verbatim}
+##        A        C        G        T        M        R        W        S 
+## 65570891 47024412 47016562 65668756        0        0        0        0 
+##        Y        K        V        H        D        B        N        - 
+##        0        0        0        0        0        0 23970000        0 
+##        +        . 
+##        0        0
+\end{verbatim}
+\begin{alltt}
+\hlstd{MseI} \hlkwb{<-} \hlstr{"TTAA"}
+\hlkwd{countPattern}\hlstd{(MseI, Hsapiens}\hlopt{$}\hlstd{chr1)}
+\end{alltt}
+\begin{verbatim}
+## [1] 1428207
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}
+\frametitle{Implementation}
+\begin{enumerate}
+\item use R external pointers to store the string data (references to C structures)
+\item use bit patterns to encode the string data
+\end{enumerate}
+\end{frame}
+
+\section{Online resources}
+\begin{frame}
+\frametitle{Online resources}
+\begin{itemize}
+\item genome browsers like UCSC and Ensembl are a rich resource for annotation of biological data
+\item large Consortia make their data available through genome browser e.g., HapMap and ENCODE
+\end{itemize}
+\vfill
+\Biocpkg{biomaRt}, \Biocpkg{rtracklayer} and \Biocpkg{AnnotationHub}
+\begin{itemize}
+\item these packages provide easy access to public data repositories
+\item \Biocpkg{rtracklayer} has functionalty to import various genomic data formats: GFF, BED, Bed15, bedGraph, WIG, BigWig
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\Biocpkg{biomaRt} example: Get annotation from ENSEMBL}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(biomaRt)}
+\hlstd{ensembl} \hlkwb{<-} \hlkwd{useMart}\hlstd{(}\hlstr{"ensembl"}\hlstd{,}\hlkwc{dataset}\hlstd{=}\hlstr{"hsapiens_gene_ensembl"}\hlstd{)}
+\hlkwd{getBM}\hlstd{(}\hlkwc{attributes} \hlstd{=} \hlkwd{c}\hlstd{(}\hlstr{"hgnc_symbol"}\hlstd{,} \hlstr{"ensembl_gene_id"}\hlstd{) ,}
+\hlkwc{filters} \hlstd{=} \hlstr{"entrezgene"}\hlstd{,}
+\hlkwc{values} \hlstd{= entrez_ids,} \hlkwc{mart}\hlstd{= ensembl)}
+\end{alltt}
+\begin{verbatim}
+##    hgnc_symbol ensembl_gene_id
+## 1         A1BG ENSG00000121410
+## 2         NAT2 ENSG00000156006
+## 3          ADA ENSG00000196839
+## 4          ADA          LRG_16
+## 5         CDH2 ENSG00000170558
+## 6         AKT3 ENSG00000117020
+## 7      GAGE12J ENSG00000224659
+## 8      GAGE12I ENSG00000241465
+## 9      GAGE12F ENSG00000236362
+## 10     GAGE12G ENSG00000215269
+## 11     GAGE12J ENSG00000269149
+## 12     GAGE12F ENSG00000270928
+## 13     GAGE12G ENSG00000271467
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\Biocpkg{rtracklayer} example: Genome Segmentations track from ENCODE}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(rtracklayer)}
+\hlstd{genomicSegmentation} \hlkwb{<-} \hlkwd{import}\hlstd{(}\hlstr{"wgEncodeAwgSegmentationChromhmmGm12878.bed"}\hlstd{,} \hlkwc{format}\hlstd{=}\hlstr{"BED"}\hlstd{)}
+\hlkwd{head}\hlstd{(genomicSegmentation)}
+\end{alltt}
+\begin{verbatim}
+## GRanges with 6 ranges and 4 metadata columns:
+##       seqnames         ranges strand |        name     score     itemRgb
+##          <Rle>      <IRanges>  <Rle> | <character> <numeric> <character>
+##   [1]     chr1 [    1, 10000]      * |       Quies      1000     #E1E1E1
+##   [2]     chr1 [10001, 10400]      * |      FaireW      1000     #FFFC04
+##   [3]     chr1 [10401, 15800]      * |         Low      1000     #C2D69A
+##   [4]     chr1 [15801, 16000]      * |        Pol2      1000     #00B050
+##   [5]     chr1 [16001, 16400]      * |       Gen3'      1000     #00B050
+##   [6]     chr1 [16401, 16600]      * |        Elon      1000     #00B050
+##                thick
+##            <IRanges>
+##   [1] [    1, 10000]
+##   [2] [10001, 10400]
+##   [3] [10401, 15800]
+##   [4] [15801, 16000]
+##   [5] [16001, 16400]
+##   [6] [16401, 16600]
+##   ---
+##   seqlengths:
+##     chr1 chr10 chr11 chr12 chr13 chr14 ...  chr6  chr7  chr8  chr9  chrX
+##       NA    NA    NA    NA    NA    NA ...    NA    NA    NA    NA    NA
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\Biocpkg{AnnotationHub} example: Obtain ENCODE ChIP-seq data}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(AnnotationHub)}
+\hlstd{ah} \hlkwb{<-} \hlkwd{AnnotationHub}\hlstd{()}
+\hlstd{res} \hlkwb{<-} \hlstd{ah}\hlopt{$}\hlstd{goldenpath.hg19.encodeDCC.wgEncodeUwTfbs.wgEncodeUwTfbsMcf7CtcfStdPkRep1.narrowPeak_0.0.1.RData}
+\hlkwd{head}\hlstd{(res)}
+\end{alltt}
+\begin{verbatim}
+## GRanges with 6 ranges and 6 metadata columns:
+##       seqnames           ranges strand |        name     score signalValue
+##          <Rle>        <IRanges>  <Rle> | <character> <integer>   <numeric>
+##   [1]     chr1 [237640, 237790]      * |           .         0          30
+##   [2]     chr1 [544660, 544810]      * |           .         0           6
+##   [3]     chr1 [567480, 567630]      * |           .         0         100
+##   [4]     chr1 [569820, 569970]      * |           .         0          85
+##   [5]     chr1 [714200, 714350]      * |           .         0          17
+##   [6]     chr1 [785880, 786030]      * |           .         0          18
+##          pValue    qValue      peak
+##       <numeric> <numeric> <integer>
+##   [1]    26.892        -1        -1
+##   [2]     8.164        -1        -1
+##   [3]    56.718        -1        -1
+##   [4]    49.654        -1        -1
+##   [5]    13.184        -1        -1
+##   [6]    15.046        -1        -1
+##   ---
+##   seqlengths:
+##         chr1     chr10     chr11 ...      chr8      chr9      chrX
+##    249250621 135534747 135006516 ... 146364022 141213431 155270560
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\end{frame}
+
+\begin{frame}
+\frametitle{Further Reading}
+\begin{itemize}
+\item  all vignettes: \textit{$>$ vignette("packageName")}
+\vfill
+\item \url{http://www.bioconductor.org/help/workflows/annotation/annotation/}
+\item \url{http://www.bioconductor.org/help/workflows/variants/}
+\item \url{http://www.bioconductor.org/help/workflows/annotation/AnnotatingRanges/}
+\vfill
+\item \url{http://www.ebi.ac.uk/training/sites/ebi.ac.uk.training/files/materials/2013/131021_HTS/genesandgenomes.pdf}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Introduction to Practical}
+
+Geunther \emph{et al.}\footcite{Guenther2014} found a regulatory region of the KITLG gene (encoding KIT ligand) that is significantly associated with common blond hair color in northern Europeans. \\
+The regulatory region, a enhancer, contains a common SNP (rs12821256) that alters a binding site for the lymphoid enhancer-binding factor 1 (LEF1) transcription factor.\\
+\vfill
+We will investigate the genes, SNP, regulatory region and transcription factor binding site of this study using \Bioconductor{} data structures/infrastructure.\\
+
+\end{frame}
+
+\end{document}

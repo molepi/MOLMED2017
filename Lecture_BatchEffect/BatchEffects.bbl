@@ -1,0 +1,68 @@
+\begin{thebibliography}{}
+
+\bibitem[Gagnon-Bartsch et~al., 2013]{Gagnon-Bartsch2013}
+Gagnon-Bartsch, J., Jacob, L., and Speed, T. (2013).
+\newblock Removing unwanted variation from high dimensional data with negative
+  controls.
+\newblock {\em Tech Report.}
+
+\bibitem[Hansen et~al., 2012]{Hansen2012}
+Hansen, K.~D., Irizarry, R.~A., and Wu, Z. (2012).
+\newblock {{R}emoving technical variability in {R}{N}{A}-seq data using
+  conditional quantile normalization}.
+\newblock {\em Biostatistics}, 13(2):204--216.
+
+\bibitem[Johnson et~al., 2007]{Johnson2007}
+Johnson, W.~E., Li, C., and Rabinovic, A. (2007).
+\newblock {{A}djusting batch effects in microarray expression data using
+  empirical {B}ayes methods}.
+\newblock {\em Biostatistics}, 8(1):118--127.
+
+\bibitem[Leek, 2014]{Leek2014}
+Leek, J.~T. (2014).
+\newblock {svaseq: removing batch effects and other unwanted noise from
+  sequencing data}.
+\newblock {\em Nucleic Acids Res.}, 42(21).
+
+\bibitem[Leek and Storey, 2007]{Leek2007}
+Leek, J.~T. and Storey, J.~D. (2007).
+\newblock {{C}apturing heterogeneity in gene expression studies by surrogate
+  variable analysis}.
+\newblock {\em PLoS Genetics}, 3(9):1724--1735.
+
+\bibitem[Risso et~al., 2014]{Risso2014}
+Risso, D., Ngai, J., Speed, T.~P., and Dudoit, S. (2014).
+\newblock {{N}ormalization of {R}{N}{A}-seq data using factor analysis of
+  control genes or samples}.
+\newblock {\em Nat. Biotechnol.}, 32(9):896--902.
+
+\bibitem[Risso et~al., 2011]{Risso2011}
+Risso, D., Schwartz, K., Sherlock, G., and Dudoit, S. (2011).
+\newblock {{G}{C}-content normalization for {R}{N}{A}-{S}eq data}.
+\newblock {\em BMC Bioinformatics}, 12:480.
+
+\bibitem[Stegle et~al., 2012]{Stegle2012}
+Stegle, O., Parts, L., Piipari, M., Winn, J., and Durbin, R. (2012).
+\newblock {{U}sing probabilistic estimation of expression residuals
+  ({P}{E}{E}{R}) to obtain increased power and interpretability of gene
+  expression analyses}.
+\newblock {\em Nat Protoc}, 7(3):500--507.
+
+\bibitem['t~Hoen et~al., 2013]{Hoen2013}
+'t~Hoen, P.~A. et~al. (2013).
+\newblock {{R}eproducibility of high-throughput m{R}{N}{A} and small {R}{N}{A}
+  sequencing across laboratories}.
+\newblock {\em Nat. Biotechnol.}, 31(11):1015--1022.
+
+\bibitem[Teschendorff et~al., 2011]{Teschendorff2011}
+Teschendorff, A.~E., Zhuang, J., and Widschwendter, M. (2011).
+\newblock {{I}ndependent surrogate variable analysis to deconvolve confounding
+  factors in large-scale microarray profiling studies}.
+\newblock {\em Bioinformatics}, 27(11):1496--1505.
+
+\bibitem[{Wang} et~al., 2015]{Wang2015}
+{Wang}, J., {Zhao}, Q., {Hastie}, T., and {Owen}, A.~B. (2015).
+\newblock {Confounder Adjustment in Multiple Hypothesis Testing}.
+\newblock {\em ArXiv e-prints}.
+
+\end{thebibliography}

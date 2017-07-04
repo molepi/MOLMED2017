@@ -1,0 +1,21 @@
+\begin{thebibliography}{}
+
+\bibitem[Gentleman et~al., 2004]{Gentleman2004}
+Gentleman, R. et~al. (2004).
+\newblock {{B}ioconductor: open software development for computational biology
+  and bioinformatics}.
+\newblock {\em Genome Biol.}, 5(10):R80.
+
+\bibitem[Huber et~al., 2015]{Huber2015}
+Huber, W. et~al. (2015).
+\newblock {{O}rchestrating high-throughput genomic analysis with
+  {B}ioconductor}.
+\newblock {\em Nat. Methods}, 12(2):115--121.
+
+\bibitem[Lawrence et~al., 2013]{Lawrence2013}
+Lawrence, M., Huber, W., Pages, H., Aboyoun, P., Carlson, M., Gentleman, R.,
+  Morgan, M., and Carey, V. (2013).
+\newblock {S}oftware for computing and annotating genomic ranges.
+\newblock {\em PLoS Comput. Biol.}, 9(8).
+
+\end{thebibliography}

@@ -1,0 +1,288 @@
+% this is a simplified version of
+% https://github.com/yihui/knitr/blob/master/inst/examples/knitr-beamer.Rnw
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{bibentry}
+
+\bibliographystyle{apalike}
+\usepackage{chngcntr}
+\counterwithin*{footnote}{page}
+\newcommand\footcite[1]{\footnote{\bibentry{#1}}\label{\thepage:#1}}
+\newcommand\secondcite[1]{\textsuperscript{\ref{\thepage:#1}}}
+% \def\newblock{\hskip .11em plus .33em minus .07em}
+% \newcommand{\newblock}{}
+
+\newcommand{\software}[1]{\textsl{#1}}
+\newcommand\R{\software{R}}
+% 
+\newcommand\Bioconductor{\software{Bioconductor}}
+\newcommand{\Rpackage}[1]{\textsl{#1}}
+\newcommand\Biocpkg[1]{%
+  {\href{http://bioconductor.org/packages/release/bioc/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocannopkg[1]{%
+  {\href{http://bioconductor.org/packages/release/data/annotation/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\Biocexptpkg[1]{%
+  {\href{http://bioconductor.org/packages/release/data/experiment/html/#1.html}%
+    {\Rpackage{#1}}}}
+\newcommand\CRANpkg[1]{%
+  {\href{http://cran.fhcrc.org/web/packages/#1/index.html}%
+    {\Rpackage{#1}}}}
+% 
+\newcommand{\Rcode}[1]{\texttt{#1}}
+\newcommand{\Rfunction}[1]{\Rcode{#1}}
+\newcommand{\Robject}[1]{\Rcode{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+
+\begin{document}
+
+\title{Data Structures for Biological Data in \R{}: Practical}
+\author{Maarten van Iterson}
+\date{\today}
+
+\maketitle
+
+\section{Introduction}
+Guenther \emph{et al.}\cite{Guenther2014} found a regulatory region of the KITLG gene (encoding KIT ligand) that is significantly associated with common blond hair color in northern Europeans. The regulatory region, an enhancer, contains a common SNP (rs12821256) that alters a binding site for the lymphoid enhancer-binding factor 1 (LEF1) transcription factor.\\
+ 
+We will investigate the genes, SNP, regulatory region and the LEF1 transcription factor binding site of this study using \Bioconductor{} data structures.
+
+\section{KITLG and LEF1}
+
+\subsection{Exercises}
+
+\textbf{Exercise 1} \emph{Get annotation for the genes KITLG and LEF1 using \Biocannopkg{org.Hs.eg.db} and/or \Biocpkg{biomaRt}. For example, find out on which chromosomes the genes are located and what the precise genomic start/end positions are.}\\
+
+\textbf{Hint:} Use \Rfunction{columns(org.Hs.eg.db)} to inspect the available columns of the \Robject{org.Hs.eg.db} object. Use \Rfunction{listMarts, listDatasets, listAttributes} and \Rfunction{listFilters} to decided which mart, datasets, filter and attributes to use from biomart.\\
+
+\section{rs12821256}
+
+\subsection{Exercises}
+
+\textbf{Exercise 2} \emph{What is the genomic location of the variant rs12821256?}\\
+
+\textbf{Hits:} Use \Biocpkg{biomaRt} and again \Rfunction{listMarts, listDatasets, listAttributes} and \Rfunction{listFilters} to decided which mart, datasets, filter and attributes to use from biomart. Verify your results e.g., using \url{http://www.ensembl.org/Homo_sapiens/Variation/Explore?r=rs12821256}.\\
+
+\section{The KITLG enhancer region}
+
+\subsection{Exercises}
+
+\textbf{Exercise 3} \emph{Construct a \Robject{GRanges}-object representing the KITLG enhancer region.}\\
+
+\textbf{Hint:} The KITLG enhancer region is called in the paper HLE which stands for Hair Follicle Enhancer. See Figure 4a of Geunther \emph{et al.}\cite{Guenther2014}.
+
+\section{Genome builds and strand}
+
+\subsection{Exercise}
+
+\textbf{Exercise 4a} \emph{Find out the genome build on which the results in the paper are based.}\\
+
+\textbf{Exercise 4b} \emph{Find out the genome build that you have used to obtain genomic positions. Do they match?}\\
+
+\textbf{Exercise 4c} \emph{Lift-over the genomic positions of the paper to build hg19.}\\
+
+\textbf{Hint:} Use the \Biocpkg{rtracklayer} function \Rfunction{liftOver} in combination with a file downloaded from \url{http://hgdownload-test.cse.ucsc.edu/goldenPath/hg18/liftOver/}.
+
+\textbf{Exercise 4d} \emph{On what strand is the KITLG gene located.}\\
+
+\textbf{Exercise 4e} \emph{What was the strand reported for the SNP.}\\
+
+\section{LEF1 motif}
+
+\subsection{Exercises}
+
+\textbf{Exercise 5a} \emph{What is the consensus sequence of the DNA-binding motif of LEF1?}\\
+
+\textbf{Hint:} Use the \Biocannopkg{MotifDb} and \Rfunction{query}-function to get the position weight matrix. With the \Biocpkg{seqLogo} package and function \Rfunction{segLogo} you can make a sequence logo plot.
+
+\textbf{Exercise 5b} \emph{Find potential binding sites in the KITLG enhancer region.}\\
+
+\textbf{Hint:} \emph{First extract the DNA sequence of the KITLG enhancer region using function \Rfunction{getSeq} and next using the \Biocpkg{Biostrings} function \Rfunction{matchPWM} to find potential binding sites. Which strand is extracted?}
+
+\textbf{Exercise 5c} \emph{Extract the highest conserved sequence from the motif and match again using \Rfunction{patternMatch}}.\\
+
+\section{Solutions}
+
+\textbf{Solution 1a:} Using \Biocannopkg{org.Hs.eg.db} and \Rfunction{select}. 
+
+<<setup, include=FALSE>>=
+opts_chunk$set(size = "tiny")
+@ 
+
+<<org.hs.eg.db, cache=TRUE>>=
+suppressPackageStartupMessages(library(org.Hs.eg.db))
+columns(org.Hs.eg.db)
+select(org.Hs.eg.db, 
+       keys="KITLG", 
+       columns=c("ENTREZID", "CHR", "CHRLOC", "CHRLOCEND", "GENENAME", "ALIAS"), 
+       keytype="SYMBOL")
+
+select(org.Hs.eg.db, 
+       keys="LEF1", 
+       columns=c("ENTREZID", "CHR", "CHRLOC", "CHRLOCEND", "GENENAME", "ALIAS"), 
+       keytype="SYMBOL")
+@ 
+
+\textbf{Solution 1b:} Using \Biocannopkg{biomaRt} and \Rfunction{getGene} or \Rfunction{getBM}. 
+
+<<biomart, cache=TRUE>>=
+library(biomaRt)
+head(listMarts())
+ensembl <- useMart("ensembl")
+head(listDatasets(ensembl))
+ensembl <- useDataset("hsapiens_gene_ensembl", mart=ensembl)
+head(listAttributes(ensembl))
+head(listFilters(ensembl))
+getGene("KITLG", type="hgnc_symbol", ensembl)
+getGene("LEF1", type="hgnc_symbol", ensembl)
+getBM(attributes=c("chromosome_name", "band", "strand", "start_position", "end_position", "ensembl_gene_id"),
+      filter="hgnc_symbol", 
+      value="KITLG", 
+      mart=ensembl)
+getBM(attributes=c("chromosome_name", "band", "strand", "start_position", "end_position", "ensembl_gene_id"),
+      filter="hgnc_symbol", 
+      value="LEF1", 
+      mart=ensembl)
+@ 
+
+\textbf{Solution 2:} Using \Biocannopkg{biomaRt} again using \Rfunction{listMarts, listDatasets, listAttributes} and \Rfunction{listFilters} to select the right mart, datasets, attributes and filter.
+ 
+<<biomartsnp, cache=TRUE>>=
+library(biomaRt)
+head(listMarts())
+snp <- useMart("snp")
+head(listDatasets(snp))
+snp <- useDataset("hsapiens_snp", mart=snp)
+head(listFilters(snp))
+head(listAttributes(snp))
+rs <- getBM(attributes=c("refsnp_id", "allele", "chr_name", "chrom_strand", "chrom_start"),
+      filter="snp_filter",
+      value=c("rs661114", "rs12821256","rs444647"),
+            mart=snp)
+rs
+@ 
+
+Beware the \Biocannopkg{biomaRt} snp data base is based on genome build: GRCh38!\\
+
+\textbf{Solution 3:} Using \Biocannopkg{biomaRt} again using \Rfunction{listMarts, listDatasets, listAttributes} and \Rfunction{listFilters} to select the right mart, datasets, attributes and filter.
+
+<<hfe, cache=TRUE>>=
+library(GenomicRanges)
+roi <- GRanges(seqnames=Rle("chr12"),
+               ranges=IRanges(87852100, 87853992))
+roi
+@ 
+
+<<rsgrange, cache=TRUE>>=
+rs <- GRanges(seqnames=Rle(paste0('chr', rs$chr_name)),
+        ranges=IRanges(rs$chrom_start, width=1),
+        rsid=rs$refsnp_id,
+        allele=rs$allele)
+rs
+@ 
+
+\textbf{Solution 4a:} The genome build used in the paper is NCBI36/hg18 see Figure 4a of the paper.\\
+
+\textbf{Solution 4b:}\\
+
+<<hg19, chache=TRUE>>=
+org.Hs.eg.db
+@ 
+
+\textbf{Solution 4c:}\\
+
+<<liftover, cache=TRUE>>=
+library(rtracklayer)
+##the hg18ToHg19.over.chain file is available on the server r course data directory
+file <- dir(pattern="hg18ToHg19.over.chain$", full.names=TRUE, recursive=TRUE)
+chain <- import.chain(file)
+
+roiHg19 <- liftOver(roi, chain)
+roiHg19 <- unlist(roiHg19)
+roiHg19
+
+file <- dir(pattern="hg38ToHg19.over.chain$", full.names=TRUE, recursive=TRUE)
+chain <- import.chain(file)
+rsHg19 <- liftOver(rs, chain)
+rsHg19 <- unlist(rsHg19)
+rsHg19
+@ 
+
+\textbf{Solution 4d:} Minus (antisense) strand. \\
+
+\textbf{Solution 4e:} Plus (sense strand). Guenther \emph{et al.} reported rs12821256 as A/G see figure 1b but from biomart we got T/C which makes sense now because the HLE regulatory region is on the opposite strand and thus A/G.\\
+
+\textbf{Solution 5a:} We didn't discuss in detail what is available from \Bioconductor{} for finding candidate transcription factor binding sites in DNA sequences (see for more information \url{http://www.bioconductor.org/help/workflows/generegulation/}).\\
+
+<<motif, cache=TRUE>>=
+library(MotifDb)
+MotifDb::query(MotifDb, "LEF1")
+lef1.motif <- MotifDb["Hsapiens-jolma2013-LEF1"]
+lef1.motif
+@  
+
+\textbf{Solution 5b:} \\
+
+<<seqlogo, cache=TRUE>>=
+library(seqLogo)
+pwm.LEF1 <- as.list(lef1.motif)[[1]]
+pwm.LEF1
+seqLogo(pwm.LEF1)
+@
+
+\textbf{Solution 5c:} \\
+
+<<matching, cache=TRUE>>=
+library(Biostrings)
+library(BSgenome.Hsapiens.UCSC.hg19)
+seq <- getSeq(Hsapiens, roiHg19)
+seq <- reverseComplement(unlist(seq))
+LEF1.matches <- matchPWM(pwm.LEF1, seq, min.score="65%")
+LEF1.matches
+consensusString(pwm.LEF1)
+##another approach
+##LEF1.matches <- matchPattern("ATCAAAG", seq)
+##LEF1.matches 
+@ 
+
+<<plotkitlg>>=
+suppressPackageStartupMessages(library(Gviz))
+width <- 5e5
+start <- length(seq) - end(LEF1.matches)
+end <- length(seq) - start(LEF1.matches)
+start(roiHg19) + start
+start(roiHg19) + end
+bsTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(roiHg19) + start, end = start(roiHg19) + end, name = "LEF1 binding-sites")
+snpTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(rsHg19)[1], width=0, name = "rs12821256")
+biomTrack <- BiomartGeneRegionTrack(chrom="chr12", genome="hg19", start = start(roiHg19) - width, end = end(roiHg19) + width, 
+                                    name = "ENSEMBL", transcriptAnnotation = "symbol", collapse=TRUE, mergeGroups=TRUE)
+gaTrack <- GenomeAxisTrack()
+plotTracks(c(bsTrack, snpTrack, gaTrack, biomTrack), from = start(roiHg19) - width, to = end(roiHg19))
+@ 
+
+<<plothle>>=
+suppressPackageStartupMessages(library(Gviz))
+library(Biostrings)
+library(BSgenome.Hsapiens.UCSC.hg19)
+start <- length(seq) - end(LEF1.matches)
+end <- length(seq) - start(LEF1.matches)
+bsTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(roiHg19) + start, end = start(roiHg19) + end, name = "LEF1 binding-sites")
+snpTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(rsHg19)[1], width=0, name = "rs12821256")
+gaTrack <- GenomeAxisTrack()
+sTrack <- SequenceTrack(Hsapiens, chrom="chr12", genome="hg19", complement = TRUE)
+consensusString(pwm.LEF1)
+plotTracks(c(sTrack, bsTrack, snpTrack, gaTrack), from = min(c(start(rsHg19)[1], start(roiHg19) + min(start)-5)), to = max(c(start(rsHg19)[1], start(roiHg19) + max(end)+5)))
+@ 
+
+%%\bibliographystyle{plain}
+\bibliography{DSFBD}
+
+\section{Required \R{} and \Bioconductor{} packages}
+<<results='tex'>>=
+sessionInfo()
+@ 
+\end{document}

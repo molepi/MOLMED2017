@@ -1,0 +1,135 @@
+## ----setup, include=FALSE------------------------------------------------
+opts_chunk$set(size = "tiny")
+
+## ----org.hs.eg.db, cache=TRUE--------------------------------------------
+suppressPackageStartupMessages(library(org.Hs.eg.db))
+columns(org.Hs.eg.db)
+select(org.Hs.eg.db, 
+       keys="KITLG", 
+       columns=c("ENTREZID", "CHR", "CHRLOC", "CHRLOCEND", "GENENAME", "ALIAS"), 
+       keytype="SYMBOL")
+
+select(org.Hs.eg.db, 
+       keys="LEF1", 
+       columns=c("ENTREZID", "CHR", "CHRLOC", "CHRLOCEND", "GENENAME", "ALIAS"), 
+       keytype="SYMBOL")
+
+## ----biomart, cache=TRUE-------------------------------------------------
+library(biomaRt)
+head(listMarts())
+ensembl <- useMart("ensembl")
+head(listDatasets(ensembl))
+ensembl <- useDataset("hsapiens_gene_ensembl", mart=ensembl)
+head(listAttributes(ensembl))
+head(listFilters(ensembl))
+getGene("KITLG", type="hgnc_symbol", ensembl)
+getGene("LEF1", type="hgnc_symbol", ensembl)
+getBM(attributes=c("chromosome_name", "band", "strand", "start_position", "end_position", "ensembl_gene_id"),
+      filter="hgnc_symbol", 
+      value="KITLG", 
+      mart=ensembl)
+getBM(attributes=c("chromosome_name", "band", "strand", "start_position", "end_position", "ensembl_gene_id"),
+      filter="hgnc_symbol", 
+      value="LEF1", 
+      mart=ensembl)
+
+## ----biomartsnp, cache=TRUE----------------------------------------------
+library(biomaRt)
+head(listMarts())
+snp <- useMart("snp")
+head(listDatasets(snp))
+snp <- useDataset("hsapiens_snp", mart=snp)
+head(listFilters(snp))
+head(listAttributes(snp))
+rs <- getBM(attributes=c("refsnp_id", "allele", "chr_name", "chrom_strand", "chrom_start"),
+      filter="snp_filter",
+      value=c("rs661114", "rs12821256","rs444647"),
+            mart=snp)
+rs
+
+## ----hfe, cache=TRUE-----------------------------------------------------
+library(GenomicRanges)
+roi <- GRanges(seqnames=Rle("chr12"),
+               ranges=IRanges(87852100, 87853992))
+roi
+
+## ----rsgrange, cache=TRUE------------------------------------------------
+rs <- GRanges(seqnames=Rle(paste0('chr', rs$chr_name)),
+        ranges=IRanges(rs$chrom_start, width=1),
+        rsid=rs$refsnp_id,
+        allele=rs$allele)
+rs
+
+## ----hg19, chache=TRUE---------------------------------------------------
+org.Hs.eg.db
+
+## ----liftover, cache=TRUE------------------------------------------------
+library(rtracklayer)
+##the hg18ToHg19.over.chain file is available on the server r course data directory
+file <- dir(pattern="hg18ToHg19.over.chain$", full.names=TRUE, recursive=TRUE)
+chain <- import.chain(file)
+
+roiHg19 <- liftOver(roi, chain)
+roiHg19 <- unlist(roiHg19)
+roiHg19
+
+file <- dir(pattern="hg38ToHg19.over.chain$", full.names=TRUE, recursive=TRUE)
+chain <- import.chain(file)
+rsHg19 <- liftOver(rs, chain)
+rsHg19 <- unlist(rsHg19)
+rsHg19
+
+## ----motif, cache=TRUE---------------------------------------------------
+library(MotifDb)
+MotifDb::query(MotifDb, "LEF1")
+lef1.motif <- MotifDb["Hsapiens-jolma2013-LEF1"]
+lef1.motif
+
+## ----seqlogo, cache=TRUE-------------------------------------------------
+library(seqLogo)
+pwm.LEF1 <- as.list(lef1.motif)[[1]]
+pwm.LEF1
+seqLogo(pwm.LEF1)
+
+## ----matching, cache=TRUE------------------------------------------------
+library(Biostrings)
+library(BSgenome.Hsapiens.UCSC.hg19)
+seq <- getSeq(Hsapiens, roiHg19)
+seq <- reverseComplement(unlist(seq))
+LEF1.matches <- matchPWM(pwm.LEF1, seq, min.score="65%")
+LEF1.matches
+consensusString(pwm.LEF1)
+##another approach
+##LEF1.matches <- matchPattern("ATCAAAG", seq)
+##LEF1.matches 
+
+## ----plotkitlg-----------------------------------------------------------
+suppressPackageStartupMessages(library(Gviz))
+width <- 5e5
+start <- length(seq) - end(LEF1.matches)
+end <- length(seq) - start(LEF1.matches)
+start(roiHg19) + start
+start(roiHg19) + end
+bsTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(roiHg19) + start, end = start(roiHg19) + end, name = "LEF1 binding-sites")
+snpTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(rsHg19)[1], width=0, name = "rs12821256")
+biomTrack <- BiomartGeneRegionTrack(chrom="chr12", genome="hg19", start = start(roiHg19) - width, end = end(roiHg19) + width, 
+                                    name = "ENSEMBL", transcriptAnnotation = "symbol", collapse=TRUE, mergeGroups=TRUE)
+gaTrack <- GenomeAxisTrack()
+plotTracks(c(bsTrack, snpTrack, gaTrack, biomTrack), from = start(roiHg19) - width, to = end(roiHg19))
+
+## ----plothle-------------------------------------------------------------
+suppressPackageStartupMessages(library(Gviz))
+library(Biostrings)
+library(BSgenome.Hsapiens.UCSC.hg19)
+start <- length(seq) - end(LEF1.matches)
+end <- length(seq) - start(LEF1.matches)
+bsTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(roiHg19) + start, end = start(roiHg19) + end, name = "LEF1 binding-sites")
+snpTrack <- AnnotationTrack(chrom="chr12", genome="hg19", start = start(rsHg19)[1], width=0, name = "rs12821256")
+gaTrack <- GenomeAxisTrack()
+sTrack <- SequenceTrack(Hsapiens, chrom="chr12", genome="hg19", complement = TRUE)
+consensusString(pwm.LEF1)
+plotTracks(c(sTrack, bsTrack, snpTrack, gaTrack), from = min(c(start(rsHg19)[1], start(roiHg19) + min(start)-5)), to = max(c(start(rsHg19)[1], start(roiHg19) + max(end)+5)))
+
+## ----results='tex'-------------------------------------------------------
+sessionInfo()
+

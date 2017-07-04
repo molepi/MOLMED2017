@@ -22,7 +22,7 @@ rm(list=ls()) ##clear work space
 
 suppressPackageStartupMessages({ 
     library(Biobase)
-    library(RUVseq)
+    library(RUVSeq)
     library(sva)
     library(limma)
     library(edgeR)
@@ -194,8 +194,8 @@ top <- topTags(lrt, n=Inf)$table
 empirical <- rownames(d)[which(!(rownames(d) %in% rownames(top)[1:5000]))]
 ```
 
-> Exercise 5: Run \Rfunction{RUVg} and inspect the effect on the data
-> using the plotRLE and/or plotPCA from \Biocpkg{RUVseq}.
+> Exercise 5: Run `RUVg` and inspect the effect on the data
+> using the plotRLE and/or plotPCA from *RUVSeq*.
 
 *Solution 5:*
 ```{r, forplotting, cache=TRUE}

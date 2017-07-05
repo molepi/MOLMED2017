@@ -8,21 +8,21 @@ output:
     toc_depth: 2
   pdf_document:
     toc: true
-    toc_depth: 2	
+    toc_depth: 2
   github_document:
     toc: true
-    toc_depth: 2	
+    toc_depth: 2
 bibliography: ../Lecture_BatchEffect/batch.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache=TRUE, eval=FALSE, cache.lazy = FALSE)
+knitr::opts_chunk$set(cache=TRUE, eval=TRUE, cache.lazy = FALSE)
 
 rm(list=ls()) ##clear work space
 
-suppressPackageStartupMessages({ 
+suppressPackageStartupMessages({
     library(Biobase)
-    library(RUVseq)
+    library(RUVSeq)
     library(sva)
     library(limma)
     library(edgeR)
@@ -30,7 +30,7 @@ suppressPackageStartupMessages({
 })
 
 ```
- 
+
 # Introduction
 
 In this practical you will learn how to perform batch correction on
@@ -49,15 +49,15 @@ The practical consists of four parts:
 
 - download the data and some preprocessing
 - find diff. expr. genes between Male/Female using
-  [limma](http://bioconductor.org/packages/limma)'s `voom` or
-  [edgeR](http://bioconductor.org/packages/edgeR) with population as a
-  known batch in the design matrix
+[limma](http://bioconductor.org/packages/limma)'s `voom` or
+[edgeR](http://bioconductor.org/packages/edgeR) with population as a
+known batch in the design matrix
 - estimate batch effects using
-  [RUVSeq](http://bioconductor.org/packages/RUVSeq) and find
-  diff. expr. genes
+[RUVSeq](http://bioconductor.org/packages/RUVSeq) and find
+diff. expr. genes
 - estimate batch effects using
-  [sva](http://bioconductor.org/packages/sva) and find
-  diff. expr. genes
+[sva](http://bioconductor.org/packages/sva) and find
+diff. expr. genes
 
 # Get the data:
 
@@ -80,14 +80,14 @@ Download the sample information file and save the sheet with sample
 info as csv-file and preprocess like this:
 
 ```{r, downloadphenotypes, cache=TRUE}
-sample.info.file <- "/20130606_sample_info.csv"
-sample.info <- read.table(, header=TRUE, sep="\t")
+sample.info.file <- "https://raw.githubusercontent.com/molepi/MOLMED2017/master/Practical_BatchEffect/20130606_sample_info.csv"
+sample.info <- read.table(url(sample.info.file), header=TRUE, sep="\t")
 head(sample.info)
 pdata <- merge(pData(montpick.eset), sample.info, by.x="sample.id", by.y="Sample", all.x=TRUE)
 pdata[is.na(pdata$Gender),]
 counts <- counts[,!is.na(pdata$Gender)]
 pdata <- pdata[!is.na(pdata$Gender),]
-pdata <- droplevels(pdata) 
+pdata <- droplevels(pdata)
 dim(pdata)
 dim(counts)
 ```
@@ -146,7 +146,7 @@ plotMDS(d, labels = Gender,top = 50, col=colPop, gene.selection="common", prior.
 *Solution 3a:*
 ```{r, voom, cache=TRUE}
 design <- model.matrix(~Gender + Population, data = pdata)
-v <- voom(d, design, plot = TRUE) 
+v <- voom(d, design, plot = TRUE)
 ```
 
 ```{r, fitvoom, cache=TRUE}
@@ -170,7 +170,7 @@ d1 <- estimateGLMTagwiseDisp(d1, design)
 
 ```{r, fitedger, cache=TRUE}
 fit <- glmFit(d1, design)
-lrt <- glmLRT(fit, coef=2) 
+lrt <- glmLRT(fit, coef=2)
 topTags(lrt)
 ```
 
@@ -194,14 +194,16 @@ top <- topTags(lrt, n=Inf)$table
 empirical <- rownames(d)[which(!(rownames(d) %in% rownames(top)[1:5000]))]
 ```
 
-> Exercise 5: Run \Rfunction{RUVg} and inspect the effect on the data
-> using the plotRLE and/or plotPCA from \Biocpkg{RUVseq}.
+> Exercise 5: Run `RUVg` and inspect the effect on the data
+> using the plotRLE and/or plotPCA from *RUVSeq*.
 
 *Solution 5:*
 ```{r, forplotting, cache=TRUE}
 library(RUVSeq)
 rownames(pdata) <- pdata$sample.id
-set <- newSeqExpressionSet(d$counts, phenoData = pdata$Gender)
+set <- newSeqExpressionSet(d$counts,
+                           phenoData = data.frame(Gender=as.character(pdata$Gender),
+                                                  row.names=pdata$sample.id))
 set
 ```
 
@@ -238,7 +240,7 @@ plot(ruv1, pdata$Population)
 
 *Solution 7:*
 ```{r, ruvfit, cache=TRUE}
-designruv <- model.matrix(~Gender, data = pdata) 
+designruv <- model.matrix(~Gender, data = pdata)
 designruv <- cbind(designruv, ruv1)
 d2 <- estimateGLMCommonDisp(d, designruv)
 d2 <- estimateGLMTagwiseDisp(d2, designruv)
@@ -258,7 +260,7 @@ introduced by the different populations.
 *Solution 8:*
 ```{r, sva, cache=TRUE}
 suppressPackageStartupMessages(library(sva))
-designsva <- model.matrix(~Gender, data = pdata) 
+designsva <- model.matrix(~Gender, data = pdata)
 n.sv <- num.sv(d$counts, designsva, method="leek")
 n.sv
 ```
@@ -272,7 +274,7 @@ one!
 
 *Solution 9:*
 ```{r, svaseq, cache=TRUE}
-designsva0 <- model.matrix(~1, data = pdata) 
+designsva0 <- model.matrix(~1, data = pdata)
 svseq <- svaseq(d$counts, designsva, designsva0, n.sv=1)
 ```
 
@@ -281,7 +283,7 @@ svseq <- svaseq(d$counts, designsva, designsva0, n.sv=1)
 
 *Solution 10:*
 ```{r, svaplot, eval=FALSE}
-plot(svseq$sv, pdata$Population) 
+plot(svseq$sv, pdata$Population)
 ```
 
 > Exercise 11: Fit a linear model correcting for the surrogate
@@ -299,5 +301,3 @@ topTable(fit)
 ```
 
 # References
-
-
